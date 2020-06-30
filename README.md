@@ -14,17 +14,21 @@ at the ENA to see if you are eligible.
 
 ## Installation
 
-The script uses Python and the [pandas](https://pandas.pydata.org/) library.
+The script uses Python as well as the libraries: pandas, retry, xlrd, requests and python-decouple.
 
-You can use the package manager [pip](https://pip.pypa.io/en/stable/) to install pandas.
+You can use the package manager [pip](https://pip.pypa.io/en/stable/) to install these dependencies.
 
 ```
 pip install pandas
+pip install retry
+pip install xlrd
+pip install requests
+pip install python-decouple
 ```
 
-## Setting up the config.py file
+## Setting up the .env file
 
-To load datasets specific to your resource, you will need to tailor the config to your use-case. This 
+To load datasets specific to your resource, you will need to tailor the .env file to your use-case. This 
 config file has three sections:
 
 #### Information about the broker 
@@ -48,7 +52,7 @@ formatted:
 - MAPPINGS_DOWNLOAD - The url where the mappings are held.
 - MAPPINGS_LOCAL - The mappings are downloaded locally before being loaded, this specifies the local file 
 for the downloaded mappings.
-- MAPPINGS_FORMAT - The format of the mappings - valid options are currently 'xlsx', 'csv' or 'tsv'
+- MAPPINGS_FORMAT - The format of the mappings - valid options are currently xlsx, csv or tsv where tsv is the default.
 - MAPPINGS_HEADER - A boolean value whether the mappings have a header line that requires skipping before loading datasets.
 - SOURCE_ID_COLUMN - The column index for the source analysis IDs within the mappings.
 - INSDC_ID_COLUMN - The column index for the INSDC IDs within the mappings.
@@ -58,7 +62,7 @@ for the downloaded mappings.
 This section is to provide the additional metadata required to describe Datasets. This script describes all datasets 
 with the same additional metadata.
 
-- METHODS - Methods that were used to derive the source ID to INSDC ID mappings, list all that apply:
+- METHODS - Methods that were used to derive the source ID to INSDC ID mappings, list all that apply in a comma separated list:
 
 ```
 hash_of_sequence
@@ -68,6 +72,12 @@ functional_signature
 gps_coordinaties
 biome
 other_metadata
+```
+
+E.g.:
+
+```
+METHODS = kmer_profile, functional_signature
 ```
 
 - CONFIDENCE - The confidence of the dataset to sequence mappings - valid options are:
