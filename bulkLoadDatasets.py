@@ -18,7 +18,7 @@ import settings
 
 
 def set_parser():
-    """set and return the argument parser"""
+    """Set and return the argument parser."""
     parser = argparse.ArgumentParser(prog='loadDatasets',
                                      description='Downloads INSDC ID to source'
                                                  ' ID mappings and loads '
@@ -29,8 +29,12 @@ def set_parser():
     return parser
 
 
+@retry(exceptions=re.RequestException, tries=3, delay=1)
 def get_file(url):
-    """Get mappings from url and save as a local file."""
+    """
+    Get mappings from url and save as a local file
+    :param url: url where mappings are presented
+    """
     try:
         logging.info(f'Getting file from {url}')
         r = requests.get(url)
@@ -46,7 +50,10 @@ def get_file(url):
 
 
 def convert_to_tsv(file_location):
-    """Convert local mappings file to tsv format."""
+    """
+    Convert local mappings file to tsv format
+    :param file_location: location of mappings file
+    """
     try:
         if settings.MAPPINGS_FORMAT == 'xlsx':
             file = pandas.read_excel(file_location)
@@ -64,7 +71,11 @@ def convert_to_tsv(file_location):
 
 
 def convert_into_dataset(file_row):
-    """Convert a row from the mappings file and return a dataset object."""
+    """
+    Convert a row from the mappings file and return an MGX registry dataset.
+    :param file_row: single row from mappings file
+    :return MGX registry dataset object
+    """
     if settings.RUN_PATTERN.match(file_row[settings.INSDC_ID_COLUMN]) and \
             settings.SOURCE_PATTERN.match(file_row[settings.SOURCE_ID_COLUMN]):
         return {
@@ -85,7 +96,11 @@ def convert_into_dataset(file_row):
 
 
 def is_not_in_registry_yet(dataset):
-    """Check if a dataset is in the registry, return a boolean."""
+    """
+    Check if a dataset is in the registry, return a boolean.
+    :param dataset: MGX registry dataset object
+    :return boolean: if the dataset is not in the registry yet
+    """
     response = get_datasets(dataset["sequenceID"])
     if response.status_code != 200:
         logging.error(
@@ -100,7 +115,12 @@ def is_not_in_registry_yet(dataset):
 
 
 def includes(datasets, dataset):
-    """Check if datasets object contains a specific dataset, return boolean."""
+    """
+    Check if registry datasets contain a specific dataset, return boolean.
+    :param datasets: List of datasets returned by MGX registry
+    :param dataset: MGX registry dataset object
+    :return boolean: if the dataset is in the list of registry datasets
+    """
     for d in datasets["datasets"]:
         if d["sourceID"] == dataset["sourceID"]:
             logging.info(f"Dataset already exists in the registry: {d}")
@@ -110,7 +130,11 @@ def includes(datasets, dataset):
 
 @retry(exceptions=re.RequestException, tries=3, delay=1)
 def get_datasets(insdc_id):
-    """Retrieve datasets from registry using INSDC id, return http response."""
+    """
+    Retrieve datasets from registry using INSDC id, return http response.
+    :param insdc_id: A valid INSDC run ID
+    :return http response: response for retrieving registry datasets for run id
+    """
     try:
         url = settings.MGX_GET.format(insdc_id)
         response = requests.get(url)
@@ -119,8 +143,13 @@ def get_datasets(insdc_id):
         logging.error("Error accessing MGX registry: {0}".format(e))
 
 
+@retry(exceptions=re.RequestException, tries=3, delay=1)
 def dataset_is_public(dataset):
-    """Check if dataset is public at public check endpoint, return boolean."""
+    """
+    Check if dataset is public at public check endpoint, return boolean.
+    :param dataset: MGX registry dataset object
+    :return boolean: if dataset is public at settings.PUBLIC_CHECK_ENDPOINT
+    """
     if settings.PUBLIC_CHECK_ENDPOINT:
         url = settings.PUBLIC_CHECK_ENDPOINT.format(dataset["sourceID"])
         response = requests.get(url)
@@ -135,7 +164,10 @@ def dataset_is_public(dataset):
 
 @retry(exceptions=re.RequestException, tries=3, delay=1)
 def post_dataset(dataset):
-    """Post dataset to registry API."""
+    """
+    Post dataset to registry API.
+    :param dataset: MGX registry dataset object
+    """
     try:
         logging.info(f'Posting dataset to registry: {dataset["sequenceID"]}')
         apikey = 'mgx ' + settings.AUTHORISATION_TOKEN
